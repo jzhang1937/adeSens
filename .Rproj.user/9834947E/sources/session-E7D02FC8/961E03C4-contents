@@ -1,0 +1,63 @@
+# Run a simulation study
+args <- commandArgs(trailingOnly = TRUE)
+# first argument - dose distribution (normal or gamma)
+# second argument - outcome type (binary or continuous)
+# third argument - delta (coefficient governing strength of association between
+# U and outcome)
+# fourth argument - n (sample size)
+# fifth argument - d (dimension of observed covariates)
+# sixth argument - iter (number of iterations, defulat 1000)
+
+# Parse arguments
+dose <- as.character(args[1])
+outcome <- as.character(args[2])
+delta <- as.numeric(args[3])
+n <- as.numeric(args[4])
+d <- as.numeric(args[5])
+if (is.na(args[6])) {
+  iter <- 1000
+} else {
+  iter <- as.numeric(args[6])
+}
+
+# initialize results list
+results <- vector("list", length = iter)
+
+source("sim_helpers.R")
+source("estimators.R")
+source("inference.R")
+
+# set seed for reproducibility
+set.seed(1234)
+
+# run the simulation
+for (1 in i:iter) {
+  sim_data <- generate_data(n = n, d = d, dose = dose, outcome = outcome,
+                            delta = delta)
+  
+  if (outcome == "continuous") {
+    results[[i]] <- continuous_ade(data = test, gamma = , 
+                                   conditional_mean = fit_y_given_X_mean_xgboost, 
+                                   score = fit_score_basis_poly,
+                                   conditional_median = fit_y_given_X_median_xgboost)
+  } else if (outcome == "binary") {
+    results[[i]] <- binary_ade(data = test, gamma = , 
+                                   conditional_mean = fit_y_given_X_mean_xgboost, 
+                                   score = fit_score_basis_poly,
+                                   conditional_median = fit_y_given_X_median_xgboost_binary)
+  }
+  
+}
+
+# save results 
+folder_path <- "simulations/results/"   # Replace with your folder path
+file_name <- paste(dose, outcome, delta, n, d, ".rds", sep = "_") # File name for the RDS file
+
+# Create the full file path
+file_path <- file.path(folder_path, file_name)
+
+# Save the object to the specified folder
+saveRDS(results, file = file_path)
+
+
+

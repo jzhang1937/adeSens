@@ -1,0 +1,27 @@
+{
+    "id": "E963B979",
+    "path": "~/Documents/adeSens/adeSens/inference.R",
+    "project_path": "inference.R",
+    "type": "r_source",
+    "hash": "1031453902",
+    "contents": "",
+    "dirty": false,
+    "created": 1733627202766.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "143,26",
+        "scrollLine": "126"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1734472045,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1734472045317,
+    "read_only": false,
+    "read_only_alternatives": []
+}
