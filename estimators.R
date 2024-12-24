@@ -395,23 +395,28 @@ fit_y_given_X_mean_xgboost_binary_fit <- function(data) {
 fit_score_tree <- function(data, df = 5) {
   A <- data$A
   X <- data$X
+  colnames(X) <- c(paste0("X", seq_len(ncol(X))))
   
   # # # Score evaluation
   m_fit <- fit_y_given_X_mean_xgboost_AX(data)
   
   # Variance estimation
   resid_train <- A - m_fit(X)
+  data_train <- data.frame("resid_train"=resid_train,
+                           "X"=X)
+  colnames(data_train)[-1] <- c(paste0("X", seq_len(ncol(X))))
   tree <- partykit::ctree(resid_train^2 ~ .,
-                          data=data.frame("resid_train"=resid_train,
-                                          "X"=X))
+                          data=data_train)
   sigma_train <- sqrt(unname(stats::predict(tree,
-                                            newdata = data.frame("X"=X))))
+                                            newdata = data.frame(X))))
   predict_score <- function(new_data) {
     X = new_data[,-1]
+    colnames(X) <- c(paste0("X", seq_len(ncol(X))))
     A = new_data[,1]
+    
     resid_test <- A - m_fit(X)
     sigma_test <- sqrt(unname(stats::predict(tree,
-                                             newdata = data.frame("X"=X))))
+                                             newdata = data.frame(X))))
     
     # If any variance estimates are close to zero, assume homogeneous (more stable)
     if (any(sigma_test < 0.01)){

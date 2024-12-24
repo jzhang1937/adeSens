@@ -96,14 +96,20 @@ continuous_ade <- function(data, gamma = 1, conditional_mean, score,
     
     # evaluate nuisance functions
     AX <- cbind(evalDataA, evalDataX)
+    # colnames(AX) <- c("A", paste0("X.", seq_len(ncol(X))))
     colnames(AX) <- c("A", paste0("X", seq_len(ncol(X))))
     
     s_hat <- score_hat(AX)
     mu_hat <- y_given_X_mean_hat(AX)
     if (is.null(conditional_mean_derivative)) {
       # resmooth
-      smoothed <- drape::resmooth(fit = y_given_X_mean_hat, 
-                                  X = AX, bw = resmooth_bw)
+      if (is.null(resmooth_bw)) {
+        smoothed <- drape::resmooth(fit = y_given_X_mean_hat, 
+                                    X = AX)
+      } else {
+        smoothed <- drape::resmooth(fit = y_given_X_mean_hat, 
+                                    X = AX, bw = resmooth_bw)
+      }
       mu_prime_hat <- smoothed$deriv[[1]]
     } else {
       mu_prime_hat <- y_given_X_mean_derivative_hat(AX)
@@ -251,8 +257,13 @@ binary_ade <- function(data, gamma = 1, conditional_mean, score,
     
     if (is.null(conditional_mean_derivative)) {
       # resmooth
-      smoothed <- drape::resmooth(fit = y_given_X_mean_hat, 
-                                  X = AX)
+      if (is.null(resmooth_bw)) {
+        smoothed <- drape::resmooth(fit = y_given_X_mean_hat, 
+                                    X = AX)
+      } else {
+        smoothed <- drape::resmooth(fit = y_given_X_mean_hat, 
+                                    X = AX, bw = resmooth_bw)
+      }
       mu_prime_hat <- smoothed$deriv[[1]]
     } else {
       mu_prime_hat <- y_given_X_mean_derivative_hat(AX)

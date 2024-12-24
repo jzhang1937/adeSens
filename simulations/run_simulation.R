@@ -70,8 +70,7 @@ for (i in 1:iter) {
     results[[i]] <- binary_ade(data = sim_data, gamma = seq(0,log(2),log(2)/4), 
                                    conditional_mean = fit_y_given_X_mean_xgboost_binary, 
                                    score = fit_score_tree_factory(spline_df),
-                                  resmooth_bw = resmooth_bw,
-                                   score = fit_score_basis_poly)
+                                  resmooth_bw = resmooth_bw)
   }
   results[[i]]$ground_truth <- sim_data$ground_truth
   results[[i]]$ground_truth_rr <- sim_data$ground_truth_rr

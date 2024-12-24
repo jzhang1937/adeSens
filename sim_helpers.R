@@ -20,15 +20,15 @@ generate_data <- function(n = 1000, d = 5, gamma = log(2), dose = "gaussian",
   }
   
   # interactions
-  AX <- X * A
+  AX_ <- X * A
   
   # draw outcome
   if (outcome == "binary") {
     Y <-  rbinom(n = n, size = 1, prob = pnorm(eta * A + rowSums(t(t(X) * beta)) +
-                     rowSums(t(t(AX) * beta_AX)) + delta * U + eta_AU * A * U))
+                     rowSums(t(t(AX_) * beta_AX)) + delta * U + eta_AU * A * U))
   } else if (outcome == "continuous") {
     Y <- rnorm(n = n, mean = eta * A + rowSums(t(t(X) * beta)) +
-                 rowSums(t(t(AX) * beta_AX)) + delta * U +
+                 rowSums(t(t(AX_) * beta_AX)) + delta * U +
                  eta_AU * A * U, sd = 1)
   }
   
