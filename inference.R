@@ -27,6 +27,7 @@
 #' @examples
 continuous_ade <- function(data, gamma = 1, conditional_mean, score,
                            conditional_median, conditional_mean_derivative = NULL,
+                           resmooth_bw = NULL,
                            K = 5, alpha = 0.05, seed = 123) {
   # extract data
   X = data$X
@@ -102,7 +103,7 @@ continuous_ade <- function(data, gamma = 1, conditional_mean, score,
     if (is.null(conditional_mean_derivative)) {
       # resmooth
       smoothed <- drape::resmooth(fit = y_given_X_mean_hat, 
-                                  X = AX)
+                                  X = AX, bw = resmooth_bw)
       mu_prime_hat <- smoothed$deriv[[1]]
     } else {
       mu_prime_hat <- y_given_X_mean_derivative_hat(AX)
@@ -177,8 +178,9 @@ continuous_ade <- function(data, gamma = 1, conditional_mean, score,
 #'
 #' @examples
 binary_ade <- function(data, gamma = 1, conditional_mean, score,
-                            conditional_mean_derivative, K = 5, 
-                           alpha = 0.05, h = 0.01, seed = 123) {
+                            conditional_mean_derivative = NULL, K = 5, 
+                            resmooth_bw = NULL,
+                           alpha = 0.05, t = 20, seed = 123) {
   # extract data
   X = data$X
   Y = data$Y
@@ -224,7 +226,7 @@ binary_ade <- function(data, gamma = 1, conditional_mean, score,
     nk <- length(evalDataY)
     
     # y given X fit
-    y_given_X_mean_hat <- fit_y_given_X(data_nuis) |>
+    y_given_X_mean_hat <- conditional_mean(data_nuis) |>
       R.utils::withSeed(seed = seed)
     
     # mean derivative fit
@@ -234,36 +236,42 @@ binary_ade <- function(data, gamma = 1, conditional_mean, score,
     }
     
     # score fit
-    score_hat <- fit_X(data_nuis) |>
+    score_hat <- score(data_nuis) |>
       R.utils::withSeed(seed = seed)
     
     # print update
     print(paste0("Fitting Nuisance Complete, Fold: ", k))
     
     # evaluate nuisance functions
-    s_hat <- score_hat(evalDataA, evalDataX)
-    mu_hat <- y_given_X_mean_hat(evalDataA, evalDataX)
+    AX <- cbind(evalDataA, evalDataX)
+    colnames(AX) <- c("A", paste0("X", seq_len(ncol(X))))
+    
+    s_hat <- score_hat(AX)
+    mu_hat <- y_given_X_mean_hat(AX)
+    
     if (is.null(conditional_mean_derivative)) {
       # resmooth
       smoothed <- drape::resmooth(fit = y_given_X_mean_hat, 
-                                  X = cbind(evalDataA, evalDataX))
+                                  X = AX)
       mu_prime_hat <- smoothed$deriv[[1]]
     } else {
-      mu_prime_hat <- y_given_X_mean_derivative_hat(evalDataA, evalDataX)
+      mu_prime_hat <- y_given_X_mean_derivative_hat(AX)
     }
     
     # IF evaluation
     ade[evalIndexes] <- -s_hat * (evalDataY - mu_hat) + mu_prime_hat
-    sens_correction[evalIndexes] <- 0.5 - 0.5^(-h) * ((mu_hat - 0.5)^(h+1) +
-      (h + 1) * ((mu_hat - 0.5)^(h)) * (evalDataY - mu_hat)) 
-    
+    sens_correction[evalIndexes] <- - 1 / t * log(exp(-t * mu_hat) + exp(-t * (1 - mu_hat))) +
+      (exp(-t * mu_hat) - exp(-t * (1 - mu_hat))) / 
+      (exp(-t * mu_hat) + exp(-t * (1 - mu_hat))) * (evalDataY - mu_hat) + log(2) / t
     for (i in seq_along(gamma)) {
-      lower[evalIndexes, i] <- ade - gamma[i] * sens_correction
-      upper[evalIndexes, i] <- ade + gamma[i] * sens_correction
+      lower[evalIndexes, i] <- ade[evalIndexes] - 
+        gamma[i] * sens_correction[evalIndexes]
+      upper[evalIndexes, i] <- ade[evalIndexes] + 
+        gamma[i] * sens_correction[evalIndexes]
     }
     
   }
-  
+
   # standard errors
   lower_sd_hat <- apply(X = lower, MARGIN = 2, FUN = stats::sd)
   upper_sd_hat <- apply(X = upper, MARGIN = 2, FUN = stats::sd)
@@ -277,13 +285,13 @@ binary_ade <- function(data, gamma = 1, conditional_mean, score,
   sens_correction_est <- mean(sens_correction)
   
   # pointwise CIs
-  lower_point_ci <- lower_est - qnorm(1-alpha) * lower_sd_hat / sqrt(n)
-  upper_point_ci <- upper_est + qnorm(1-alpha) * upper_sd_hat / sqrt(n)
+  lower_point_ci <- lower_est - qnorm(1-alpha) * lower_sd_hat / sqrt(n) 
+  upper_point_ci <- upper_est + qnorm(1-alpha) * upper_sd_hat / sqrt(n) 
   
   # uniform CIs
   lower_uniform_ci <- ade_est  - qnorm(1-alpha / 2) * ade_sd_hat / sqrt(n) - gamma *
-    (sens_correction_est - qnorm(1-alpha / 2) * sens_correction_sd_hat/ sqrt(n))
-  upper_uniform_ci <- ade_est  + qnorm(1-alpha / 2) * ade_sd_hat / sqrt(n) + gamma *
+    (sens_correction_est + qnorm(1-alpha / 2) * sens_correction_sd_hat/ sqrt(n))
+  upper_uniform_ci <- ade_est + qnorm(1-alpha / 2) * ade_sd_hat / sqrt(n) + gamma *
     (sens_correction_est + qnorm(1-alpha / 2) * sens_correction_sd_hat/ sqrt(n))
   
   return(list(lower_est = lower_est, upper_est = upper_est, ade_est = ade_est,
