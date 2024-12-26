@@ -186,7 +186,7 @@ continuous_ade <- function(data, gamma = 1, conditional_mean, score,
 binary_ade <- function(data, gamma = 1, conditional_mean, score,
                             conditional_mean_derivative = NULL, K = 5, 
                             resmooth_bw = NULL,
-                           alpha = 0.05, t = 20, seed = 123) {
+                           alpha = 0.05, t = 50, seed = 123) {
   # extract data
   X = data$X
   Y = data$Y
