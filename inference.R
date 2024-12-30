@@ -27,7 +27,7 @@
 #' @examples
 continuous_ade <- function(data, gamma = 1, conditional_mean, score,
                            conditional_median, conditional_mean_derivative = NULL,
-                           resmooth_bw = NULL,
+                           resmooth_bw = NULL, finite_diff = NULL,
                            K = 5, alpha = 0.05, seed = 123) {
   # extract data
   X = data$X
@@ -103,14 +103,27 @@ continuous_ade <- function(data, gamma = 1, conditional_mean, score,
     mu_hat <- y_given_X_mean_hat(AX)
     if (is.null(conditional_mean_derivative)) {
       # resmooth
-      if (is.null(resmooth_bw)) {
-        smoothed <- drape::resmooth(fit = y_given_X_mean_hat, 
-                                    X = AX)
+      if (is.null(finite_diff)) {
+        if (is.null(resmooth_bw)) {
+          smoothed <- drape::resmooth(fit = y_given_X_mean_hat, 
+                                      X = AX)
+          
+        } else {
+          smoothed <- drape::resmooth(fit = y_given_X_mean_hat, 
+                                      X = AX, bw = resmooth_bw)
+        }
+        mu_prime_hat <- smoothed$deriv[[1]]
       } else {
-        smoothed <- drape::resmooth(fit = y_given_X_mean_hat, 
-                                    X = AX, bw = resmooth_bw)
+        
+        above = AX
+        above[,1] = evalDataA + finite_diff
+        below = AX
+        below[,1] = evalDataA - finite_diff
+        mu_prime_hat <- (y_given_X_mean_hat(above) - y_given_X_mean_hat(below)) / (2 * finite_diff)
+        
       }
-      mu_prime_hat <- smoothed$deriv[[1]]
+      
+      
     } else {
       mu_prime_hat <- y_given_X_mean_derivative_hat(AX)
     }
