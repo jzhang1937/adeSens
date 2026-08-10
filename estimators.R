@@ -318,6 +318,47 @@ fit_y_given_X_mean_postlasso <- function(data, degree = 2) {
   return(predict_mean)
 }
 
+fit_y_given_X_mean_ranger <- function(data) {
+  Y <- data$Y
+  A <- data$A
+  X <- data$X
+  
+  # predictors <- cbind(A, X)
+  # colnames(predictors) <- c("A", paste0("X", seq_len(ncol(X))))
+  df <- data.frame(Y = Y, A = A, X = X)
+  
+  # fit the model
+  model <- ranger::ranger(Y ~ ., data = df)
+  
+  predict_mean <- function(AX) {
+    # Check if new_data is a data frame or matrix
+    if (!is.data.frame(AX) && !is.matrix(AX)) {
+      stop("new_data must be a data frame or matrix.")
+    }
+    
+    # Ensure the new data has the same number of features
+    # expected_features <- model$feature_names
+    # if (!all(expected_features %in% colnames(new_data))) {
+    #  stop("new_data must contain the same features as the training data.")
+    #}
+    
+    # Reorder columns to match the training data
+    #new_data <- new_data[, expected_features]
+    
+    # Convert new data to matrix if necessary
+    new_data <- as.data.frame(AX)
+    colnames(new_data) <- model$forest$independent.variable.names
+    
+    # Make predictions
+    preds <- predict(model, new_data)
+    
+    return(preds$predictions)
+  }
+  
+  return(predict_mean)
+  
+}
+
 # score
 # adapted from drape::drape function
 fit_score_tree <- function(data, df = 5) {

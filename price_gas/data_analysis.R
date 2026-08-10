@@ -5,8 +5,8 @@ library(drape)
 library(tidyverse)
 
 
-source("../estimators.R")
-source("../inference.R")
+source("estimators.R")
+source("inference.R")
 
 data("gasdemand")
 
@@ -26,7 +26,8 @@ clean_df <- df |> pivot_longer(
     values_fill = 0
   )|> select(-region)
 # output
-confounders_df <- as.matrix(clean_df %>% select(-c(log_q, log_p)))
+subset_clean_df <- clean_df[,1:21]
+confounders_df <- as.matrix(subset_clean_df %>% select(-c(log_q, log_p)))
 # Run method for enrolled any
 price_gas_data <- list(A = clean_df$log_p, Y = clean_df$log_q,
                        X = confounders_df)
@@ -41,10 +42,10 @@ for (m in 1:20) {
   print(result_price_gas$ade_est)
 }
 result_price_gas <- continuous_ade(data = price_gas_data, gamma = seq(0,log(4), length.out = 40), 
-                                   conditional_mean = fit_y_given_X_mean_postlasso, 
-                                   score = fit_score_tree_postlasso_factory(df = 12),
+                                   conditional_mean = fit_y_given_X_mean_ranger, 
+                                   score = fit_score_tree_postlasso_factory(df = 8),
                                    conditional_median = fit_y_given_X_median_xgboost,
-                                   conditional_mean_derivative = NULL, K = 10, 
+                                   conditional_mean_derivative = NULL, K = 5,
                                    finite_diff = 0.01,
                                    resmooth_bw = NULL, alpha = 0.05)
 ols_price_gas <- lm(clean_df$log_q ~ clean_df$log_p + confounders_df)

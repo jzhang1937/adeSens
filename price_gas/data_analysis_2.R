@@ -6,11 +6,12 @@ library(tidyverse)
 library(xgboost)
 library(drape)
 library(foreign)
+library(ranger)
 
-source("../estimators.R")
-source("../inference.R")
+source("estimators.R")
+source("inference.R")
 
-df  <- read.dta("gasoline_final_tf1.dta")
+df  <- read.dta("price_gas/gasoline_final_tf1.dta")
 names(df)
 
 N=nrow(df)
@@ -40,12 +41,18 @@ confounders_df <- as.matrix(clean_df %>% select(-c(price, gas)))
 # Run method for enrolled any
 price_gas_data <- list(A = clean_df$price, Y = clean_df$gas,
                           X = confounders_df)
-result_price_gas <- continuous_ade(data = price_gas_data, gamma = seq(0,log(4), length.out = 40), 
+result_price_gas_postlasso <- continuous_ade(data = price_gas_data, gamma = seq(0,log(4), length.out = 40), 
                                   conditional_mean = fit_y_given_X_mean_postlasso, 
                                   score = fit_score_tree_factory(df = 2),
                                   conditional_median = fit_y_given_X_median_xgboost,
-                                  conditional_mean_derivative = NULL, K = 10, 
-                                  resmooth_bw = NULL, alpha = 0.1)
+                                  conditional_mean_derivative = NULL, K = 5, 
+                                  resmooth_bw = NULL, alpha = 0.05)
+result_price_gas_rf <- continuous_ade(data = price_gas_data, gamma = seq(0,log(4), length.out = 40), 
+                                   conditional_mean = fit_y_given_X_mean_ranger, 
+                                   score = fit_score_tree_factory(df = 2),
+                                   conditional_median = fit_y_given_X_median_xgboost,
+                                   conditional_mean_derivative = NULL, K = 5, 
+                                   resmooth_bw = NULL, alpha = 0.05)
 ols_price_gas <- lm(clean_df$gas ~ clean_df$price + confounders_df)
 
 # ensure diff memory location

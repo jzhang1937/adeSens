@@ -1,4 +1,5 @@
 library(dplyr)
+library(xtable)
 # code to process and put the results in tables
 param_grid <- readRDS("simulations/grid.rds")
 param_grid$eta <- NULL
@@ -90,6 +91,46 @@ results_list_2 <- lapply(summary_results_2, function(x) unlist(x))
 
 # Combine vectors row-wise into a matrix
 summary_results_df_2 <- as.data.frame(do.call(rbind, results_list_2))
+
+latex_table_point <- print(xtable(bind_cols(param_grid_2[,1:3],summary_results_df_2[,1:5])), 
+                     include.rownames = FALSE, 
+                     digits = NULL)
+latex_table_uniform<- print(xtable(bind_cols(param_grid_2,summary_results_df_2[,6:10])), 
+                           include.rownames = FALSE, 
+                           digits = NULL)
+
+
+# code to process and put the results in tables
+param_grid_3 <- readRDS("simulations/grid_3.rds")
+param_grid_3$eta <- NULL
+param_grid_3$eta_AU <- NULL
+
+# Rearrange columns to the desired order
+param_grid_3 <- param_grid_3 %>% select(dose, outcome, delta, n, d)
+
+results_3 <- apply(param_grid_3, 1, read_results)
+
+results_3[[5]] <- results_3[[4]]
+
+
+# Compute averages for each simulation
+summary_results_3 <- lapply(results_3, function(simulation) {
+  # Compute measures for all iterations
+  measures_list <- lapply(simulation, compute_coverage)
+  
+  # Combine into a matrix for averaging (each row is a measure vector)
+  measures_matrix <- do.call(rbind, measures_list)
+  measures_matrix[is.na(measures_matrix)] <- 0
+  
+  # Take the average of each column (final vector average)
+  colMeans(measures_matrix)
+})
+
+# Extract vectors from inner lists
+results_list_3 <- lapply(summary_results_3, function(x) unlist(x))
+
+# Combine vectors row-wise into a matrix
+summary_results_df_3 <- as.data.frame(do.call(rbind, results_list_3))
 
 summary_results_df <- rbind(summary_results_df, summary_results_df_1)
 

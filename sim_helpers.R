@@ -17,6 +17,8 @@ generate_data <- function(n = 1000, d = 5, gamma = log(2), dose = "gaussian",
     A <- rnorm(n = n, mean = rowSums(t(t(X) * theta)) + gamma * U, sd = 1)
   } else if (dose == "gamma") {
     A <- rgamma(n = n, shape = 13, rate = 8 + rowSums(t(t(X) * theta)) - gamma * U)
+  } else if (dose == "exponential") {
+    A <- rexp(n = n, rate = rowSums(t(t(X) * 1)) + gamma * U)
   }
   
   # interactions
@@ -43,6 +45,9 @@ generate_data <- function(n = 1000, d = 5, gamma = log(2), dose = "gaussian",
     } else if (dose == "gamma") {
       A_samp <- rgamma(n = n_samp, shape = 13, rate = 8 + rowSums(t(t(X_samp) * theta)) - gamma * U_samp)
       true_score <- 12 / A_samp - 8 - rowSums(t(t(X_samp) * theta)) + gamma * U_samp
+    } else if (dose == "exponential") {
+      A_samp <- rexp(n = n, rate = rowSums(t(t(X_samp) * 1)) + gamma * U_samp)
+      true_score <- rowSums(t(t(X_samp) * 1)) + gamma * U_samp
     }
     # interactions
     AX_samp <- X_samp * A_samp
